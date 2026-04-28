@@ -1,15 +1,14 @@
 <script>
   import { onMount } from 'svelte';
+  import { apiBaseUrl } from './stores.js';
 
   let jobs = [];
   let error = null;
   let isLoading = true;
 
-  const API_BASE_URL = 'https://sayidj-backend-yolo-coffee-app.hf.space';
-
   async function fetchHistory() {
     try {
-      const response = await fetch(`${API_BASE_URL}/history`);
+      const response = await fetch(`${$apiBaseUrl}/history`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -23,30 +22,30 @@
   }
 
   async function deleteJob(jobId) {
-    if (!confirm('Are you sure you want to delete this job and its files?')) {
+    if (!confirm('Hapus riwayat proses ini beserta file terkait?')) {
       return;
     }
     try {
-      const response = await fetch(`${API_BASE_URL}/history/${jobId}`, { method: 'DELETE' });
+      const response = await fetch(`${$apiBaseUrl}/history/${jobId}`, { method: 'DELETE' });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       fetchHistory();
     } catch (e) {
-      alert(`Failed to delete job: ${e.message}`);
+      alert(`Gagal menghapus data: ${e.message}`);
       console.error("Error deleting job:", e);
     }
   }
 
   async function retryJob(jobId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/retry/${jobId}`, { method: 'POST' });
+      const response = await fetch(`${$apiBaseUrl}/retry/${jobId}`, { method: 'POST' });
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       fetchHistory();
     } catch (e) {
-      alert(`Failed to retry job: ${e.message}`);
+      alert(`Gagal menjalankan ulang proses: ${e.message}`);
       console.error("Error retrying job:", e);
     }
   }
@@ -65,43 +64,43 @@
 </script>
 
 <div class="history-container">
-  <h2 class="h4 mb-3">Vidio Detection History</h2>
+  <h2 class="h4 mb-3">Riwayat Analisis Video Udang</h2>
   {#if isLoading}
-    <p>Loading history...</p>
+    <p>Memuat riwayat...</p>
   {:else if error}
-    <p class="error">Failed to load history: {error}</p>
+    <p class="error">Gagal memuat riwayat: {error}</p>
   {:else if jobs.length === 0}
-    <p>No detection jobs found.</p>
+    <p>Belum ada proses analisis video.</p>
   {:else}
-    <button on:click={fetchHistory} class="refresh-btn">Refresh</button>
+    <button on:click={fetchHistory} class="refresh-btn">Muat Ulang</button>
     <div class="table-responsive">
       <table class="table table-striped table-hover align-middle">
         <thead>
           <tr>
             <th>ID</th>
-            <th>Filename</th>
+            <th>Nama File</th>
             <th>Status</th>
-            <th>Upload Time</th>
-            <th>Actions</th>
+            <th>Waktu Upload</th>
+            <th>Aksi</th>
           </tr>
         </thead>
         <tbody>
           {#each jobs as job (job.id)}
             <tr>
               <td>{job.id}</td>
-              <td>{job.filename}</td>
+              <td>{job.original_filename}</td>
               <td>
                 <span class={`badge status-badge status-${job.status.toLowerCase()}`}>{job.status}</span>
               </td>
               <td>{formatDateTime(job.upload_time)}</td>
               <td class="actions">
                 {#if job.status === 'SUCCESS'}
-                  <a href="{API_BASE_URL}/download/{job.id}" class="btn btn-sm btn-outline-success">Download</a>
+                  <a href="{$apiBaseUrl}/download/{job.id}" class="btn btn-sm btn-outline-success">Unduh</a>
                 {/if}
                 {#if job.status === 'FAILURE'}
-                  <button on:click={() => retryJob(job.id)} class="btn btn-sm btn-outline-warning">Retry</button>
+                  <button on:click={() => retryJob(job.id)} class="btn btn-sm btn-outline-warning">Coba Lagi</button>
                 {/if}
-                <button on:click={() => deleteJob(job.id)} class="btn btn-sm btn-outline-danger">Delete</button>
+                <button on:click={() => deleteJob(job.id)} class="btn btn-sm btn-outline-danger">Hapus</button>
               </td>
             </tr>
           {/each}

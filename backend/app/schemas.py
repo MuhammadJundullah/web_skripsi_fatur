@@ -9,6 +9,7 @@ class JobBase(BaseModel):
 # Schema for reading a Job from the API
 class Job(JobBase):
     id: int
+    original_filename: str
     task_id: Optional[str] = None
     status: str
     upload_time: datetime
@@ -42,10 +43,11 @@ class Detection(BaseModel):
     bbox: BoundingBox
 
 class DetectionSummary(BaseModel):
-    normal_count: int
-    abnormal_count: int
-    normal_percentage: float
-    abnormal_percentage: float
+    total_count: int
+    healthy_count: int
+    diseased_count: int
+    healthy_percentage: float
+    diseased_percentage: float
 
 class ImageDetectionResponse(BaseModel):
     imageUrl: str

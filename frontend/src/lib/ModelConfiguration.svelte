@@ -20,16 +20,16 @@
   }
 
   async function saveConfidence() {
-    status = 'Saving...';
+    status = 'Menyimpan...';
     try {
       const response = await fetch(`${$apiBaseUrl}/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ key: 'model_confidence', value: String(confidence) })
       });
-      if (!response.ok) throw new Error('Failed to save setting');
+      if (!response.ok) throw new Error('Gagal menyimpan pengaturan');
       initialValue = confidence;
-      status = 'Saved!';
+      status = 'Tersimpan.';
     } catch (error) {
       status = `Error: ${error.message}`;
     } finally {
@@ -54,10 +54,10 @@
 
 <div class="card h-100">
   <div class="card-body">
-    <h5 class="card-title">Model Configuration</h5>
-    <label for="confidence-slider" class="form-label">Confidence Threshold: {confidence.toFixed(2)}</label>
+    <h5 class="card-title">Konfigurasi Model</h5>
+    <label for="confidence-slider" class="form-label">Ambang Confidence: {confidence.toFixed(2)}</label>
     <input type="range" class="form-range" min="0.1" max="0.9" step="0.05" id="confidence-slider" bind:value={confidence}>
-    <div class="form-text">Detection boxes with a confidence score below this value will be ignored.</div>
+    <div class="form-text">Bounding box dengan confidence di bawah nilai ini akan diabaikan.</div>
     {#if status}
       <div class="form-text mt-2">{status}</div>
     {/if}

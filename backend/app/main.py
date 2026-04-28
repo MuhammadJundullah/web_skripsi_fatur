@@ -25,7 +25,7 @@ load_dotenv()
 # Create all database tables on startup
 database.create_db_and_tables()
 
-app = FastAPI(title="Coffee Bean Detection API")
+app = FastAPI(title="Vannamei Shrimp Disease Detection API")
 
 # CORS Middleware
 app.add_middleware(
@@ -68,6 +68,20 @@ def get_model_confidence(db: Session) -> float:
         except (ValueError, TypeError):
             return 0.25 
     return 0.25 
+
+
+HEALTHY_CLASS_KEYWORDS = {
+    "normal",
+    "healthy",
+    "sehat",
+    "aman",
+    "good",
+}
+
+
+def is_healthy_class(class_name: str) -> bool:
+    normalized = class_name.strip().lower()
+    return any(keyword in normalized for keyword in HEALTHY_CLASS_KEYWORDS)
 
 # --- API Endpoints ---
 
@@ -115,8 +129,8 @@ async def detect_image_endpoint(file: UploadFile = File(...), db: Session = Depe
         
         # Process results
         detections_data = []
-        normal_count = 0
-        abnormal_count = 0
+        healthy_count = 0
+        diseased_count = 0
         
         # YOLOv8 results object structure: results[0] contains detections for the first image
         if results and results[0].boxes:
@@ -128,13 +142,12 @@ async def detect_image_endpoint(file: UploadFile = File(...), db: Session = Depe
                 # Get bounding box coordinates
                 x1, y1, x2, y2 = map(float, box.xyxy[0].tolist())
                 
-                # Categorize as normal or abnormal
-                # *** ASSUMPTION: 'normal' is the only class considered 'good'. Adjust if needed. ***
-                is_normal = class_name == 'Biji Normal'
-                if is_normal:
-                    normal_count += 1
+                # Kelas yang memuat kata seperti "sehat"/"normal"/"healthy"
+                # diperlakukan sebagai udang sehat. Sisanya dianggap indikasi penyakit.
+                if is_healthy_class(class_name):
+                    healthy_count += 1
                 else:
-                    abnormal_count += 1
+                    diseased_count += 1
                 
                 detections_data.append(schemas.Detection(
                     class_name=class_name,
@@ -144,22 +157,24 @@ async def detect_image_endpoint(file: UploadFile = File(...), db: Session = Depe
 
             # Calculate summary statistics
             total_detected = len(detections_data)
-            normal_percentage = (normal_count / total_detected * 100) if total_detected > 0 else 0
-            abnormal_percentage = (abnormal_count / total_detected * 100) if total_detected > 0 else 0
+            healthy_percentage = (healthy_count / total_detected * 100) if total_detected > 0 else 0
+            diseased_percentage = (diseased_count / total_detected * 100) if total_detected > 0 else 0
 
             summary = schemas.DetectionSummary(
-                normal_count=normal_count,
-                abnormal_count=abnormal_count,
-                normal_percentage=normal_percentage,
-                abnormal_percentage=abnormal_percentage
+                total_count=total_detected,
+                healthy_count=healthy_count,
+                diseased_count=diseased_count,
+                healthy_percentage=healthy_percentage,
+                diseased_percentage=diseased_percentage
             )
         else:
             # No detections found
             summary = schemas.DetectionSummary(
-                normal_count=0,
-                abnormal_count=0,
-                normal_percentage=0.0,
-                abnormal_percentage=0.0
+                total_count=0,
+                healthy_count=0,
+                diseased_count=0,
+                healthy_percentage=0.0,
+                diseased_percentage=0.0
             )
             detections_data = []
 

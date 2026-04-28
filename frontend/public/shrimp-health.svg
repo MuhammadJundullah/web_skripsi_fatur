@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title>Udang Vannamei Sehat</title>
+  <defs>
+    <linearGradient id="body" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8ce0d4"/>
+      <stop offset="100%" stop-color="#0f8f95"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f9b37c"/>
+      <stop offset="100%" stop-color="#ef7d57"/>
+    </linearGradient>
+  </defs>
+  <path d="M47 17c-8-5-20-2-27 6-7 8-8 18-3 25 5 7 15 9 24 5 3-1 5-3 7-5-3 1-6 2-9 2-10 0-18-7-18-15s8-15 18-15c4 0 8 1 11 3l-3-6z" fill="url(#body)"/>
+  <path d="M47 17c6 5 10 13 10 22 0 4-1 8-3 11l-5-3c1-2 2-5 2-8 0-7-3-13-8-17l4-5z" fill="url(#accent)"/>
+  <circle cx="40" cy="24" r="2.2" fill="#08363a"/>
+  <path d="M19 26c6-3 15-3 22 1" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.8"/>
+  <path d="M20 14l7 5M14 20l9 2M11 29l9-1M47 49l6 6" stroke="#0b6b6f" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="53" cy="55" r="8" fill="#e8fffb"/>
+  <path d="M49 55l3 3 6-7" stroke="#0f8f95" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>

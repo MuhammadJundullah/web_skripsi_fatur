@@ -4,15 +4,15 @@
 
 body {
     background:
-        radial-gradient(circle at top left, rgba(116, 198, 157, 0.18), transparent 30%),
-        radial-gradient(circle at top right, rgba(220, 53, 69, 0.12), transparent 28%),
-        linear-gradient(180deg, #f8fbf4 0%, #eef6ec 100%);
+        radial-gradient(circle at top left, rgba(51, 180, 198, 0.20), transparent 30%),
+        radial-gradient(circle at top right, rgba(18, 125, 140, 0.14), transparent 28%),
+        linear-gradient(180deg, #f3fbfc 0%, #e8f5f7 100%);
     min-height: 100vh;
 }
 
 .app-navbar {
-    background: linear-gradient(90deg, #215732 0%, #2f6f3b 55%, #8a1c1c 100%);
-    box-shadow: 0 6px 18px rgba(33, 87, 50, 0.18);
+    background: linear-gradient(90deg, #0c4f59 0%, #0f6d7a 55%, #14a3a3 100%);
+    box-shadow: 0 6px 18px rgba(12, 79, 89, 0.22);
 }
 
 .navbar-brand {
@@ -37,7 +37,7 @@ body {
         top: 100%;
         left: 0;
         right: 0;
-        background: linear-gradient(180deg, #2a6036 0%, #214d2b 100%);
+        background: linear-gradient(180deg, #0f6d7a 0%, #0c4f59 100%);
         padding: 1rem;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         border-top: 1px solid rgba(255, 255, 255, 0.1);

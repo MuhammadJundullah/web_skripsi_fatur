@@ -138,21 +138,21 @@
 </script>
 
 <section class="bg-white p-4 rounded-3 shadow-sm mb-4">
-  <h2 class="h4 mb-3">Real-time Detection</h2>
+  <h2 class="h4 mb-3">Deteksi Real-time Udang Vannamei</h2>
 
   <div class="row g-2 align-items-end">
     <div class="col-auto">
-      <button on:click={startStreaming} disabled={isStreaming} class="btn btn-primary btn-sm">Start Streaming</button>
+      <button on:click={startStreaming} disabled={isStreaming} class="btn btn-primary btn-sm">Mulai Streaming</button>
     </div>
     <div class="col-auto">
-      <button on:click={() => stopStreaming()} disabled={!isStreaming} class="btn btn-outline-primary btn-sm">Stop Streaming</button>
+      <button on:click={() => stopStreaming()} disabled={!isStreaming} class="btn btn-outline-primary btn-sm">Hentikan Streaming</button>
     </div>
     <div class="col-auto">
-      <button on:click={toggleFullscreen} disabled={!isStreaming} class="btn btn-outline-secondary btn-sm">Fullscreen</button>
+      <button on:click={toggleFullscreen} disabled={!isStreaming} class="btn btn-outline-secondary btn-sm">Layar Penuh</button>
     </div>
 
     <div class="col-12 col-md-3">
-      <label for="interval-select" class="form-label mb-1">Frame Rate</label>
+      <label for="interval-select" class="form-label mb-1">Kecepatan Frame</label>
       <select id="interval-select" class="form-select form-select-sm" bind:value={streamingInterval} disabled={isStreaming}>
         {#each intervalOptions as option}
           <option value={option.value}>{option.label}</option>
@@ -161,11 +161,11 @@
     </div>
 
     <div class="col-12 col-md-4">
-      <label for="camera-select" class="form-label mb-1">Camera</label>
+      <label for="camera-select" class="form-label mb-1">Kamera</label>
       <select id="camera-select" class="form-select form-select-sm"
               bind:value={selectedCameraId} disabled={isStreaming || availableCameras.length === 0}>
         {#if availableCameras.length === 0}
-          <option value="">No cameras found</option>
+          <option value="">Kamera tidak ditemukan</option>
         {/if}
         {#each availableCameras as camera}
           <option value={camera.deviceId}>{camera.label || `Camera ${camera.deviceId.substring(0, 6)}`}</option>
@@ -179,7 +179,7 @@
   <div class="row g-3">
     <div class="col-12 col-lg-6">
       <div class="card h-100">
-        <div class="card-header">Live Camera</div>
+          <div class="card-header">Kamera Langsung</div>
         <div class="card-body">
           <div class="ratio ratio-4x3">
             <video class="w-100 h-100" bind:this={videoElement} autoplay muted playsinline></video>
@@ -190,9 +190,9 @@
 
     <div class="col-12 col-lg-6">
       <div class="card h-100">
-        <div class="card-header">Processed Stream</div>
+          <div class="card-header">Hasil Deteksi</div>
         <div class="card-body">
-          <img class="img-fluid border" bind:this={processedImageElement} alt="Processed stream" />
+          <img class="img-fluid border" bind:this={processedImageElement} alt="Hasil streaming deteksi penyakit udang" />
         </div>
       </div>
     </div>

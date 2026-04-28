@@ -13,7 +13,7 @@
   });
 
   async function saveSettings() {
-    status = 'Saving...';
+    status = 'Menyimpan...';
     try {
       const response = await fetch(`${$apiBaseUrl}/settings`, {
         method: 'POST',
@@ -22,12 +22,12 @@
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save settings');
+        throw new Error('Gagal menyimpan pengaturan');
       }
 
       // Update the global store, which will trigger reactivity
       apiBaseUrl.set(currentApiUrl);
-      status = 'Saved successfully!';
+      status = 'Berhasil disimpan.';
     } catch (error) {
       status = `Error: ${error.message}`;
       console.error(error);
@@ -39,14 +39,14 @@
 
 <div class="card">
   <div class="card-body">
-    <h5 class="card-title">API Configuration</h5>
+    <h5 class="card-title">Konfigurasi API</h5>
     <div class="row g-2 align-items-end">
       <div class="col">
-        <label for="api-url" class="form-label">API Base URL</label>
+        <label for="api-url" class="form-label">Base URL Backend</label>
         <input id="api-url" type="text" class="form-control" bind:value={currentApiUrl} />
       </div>
       <div class="col-auto">
-        <button class="btn btn-primary" on:click={saveSettings}>Save</button>
+        <button class="btn btn-primary" on:click={saveSettings}>Simpan</button>
       </div>
     </div>
     {#if status}

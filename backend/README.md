@@ -18,7 +18,7 @@ docker build -t <dockerhub-username>/<image-name>:<tag> .
 Example:
 
 ```bash
-docker build -t myuser/coffee-backend:1.0.0 .
+docker build -t myuser/vannamei-backend:1.0.0 .
 ```
 
 ## Run the Docker image (local)
