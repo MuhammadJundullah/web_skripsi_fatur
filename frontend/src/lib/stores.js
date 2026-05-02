@@ -1,14 +1,14 @@
 import { writable } from 'svelte/store';
 
 // Default API base URL, will be overwritten by initialization
-export const apiBaseUrl = writable('http://127.0.0.1:8000');
+export const apiBaseUrl = writable('https://sayidj-web-skripsi-fathur.hf.space');
 
 // Store for server stats
 export const serverStats = writable(null);
 
 // Function to initialize the apiBaseUrl from the backend
 export async function initializeApiUrl() {
-  const defaultUrl = 'http://127.0.0.1:8000';
+  const defaultUrl = 'https://sayidj-web-skripsi-fathur.hf.space';
   try {
     const response = await fetch(`${defaultUrl}/settings/api_base_url`);
     if (response.ok) {

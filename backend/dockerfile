@@ -27,10 +27,13 @@ WORKDIR /app
 # Salin venv dari builder
 COPY --from=builder /app/venv /app/venv
 
-# Runtime dependencies (Dihapus libgl1 karena kita pakai opencv-headless)
-# libglib2.0-0 tetap dibutuhkan untuk beberapa fungsi image processing
+# Runtime dependencies untuk OpenCV/Ultralytics pada image slim.
+# Walaupun memakai opencv-python-headless, beberapa dependency native
+# tetap sering dibutuhkan saat import/inference/plotting di Linux.
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    libgl1 \
     libglib2.0-0 \
+    libgomp1 \
     supervisor \
     && rm -rf /var/lib/apt/lists/*
 

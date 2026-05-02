@@ -7,7 +7,7 @@
     }
 </script>
 
-<nav class="navbar navbar-expand-lg navbar-dark app-navbar">
+<nav class="navbar navbar-expand-lg navbar-light app-navbar">
     <div class="container-fluid">
         <Link class="navbar-brand" to="/">
             <img src="/shrimp-health.svg" alt="Logo deteksi penyakit udang vannamei" width="30" height="24" class="d-inline-block align-text-top">

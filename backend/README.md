@@ -32,6 +32,8 @@ docker run --rm -p 7860:7860 \
   <dockerhub-username>/<image-name>:<tag>
 ```
 
+If you previously saw an error like `ImportError: libGL.so.1`, rebuild the image from the updated Dockerfile. The runtime image now installs the native libraries needed by the backend CV stack.
+
 ## Push the image to Docker Hub
 
 ```bash
