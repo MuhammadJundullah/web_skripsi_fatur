@@ -31,5 +31,5 @@ jobs:
           file: backend/Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/backend:latest
-            ${{ secrets.DOCKERHUB_USERNAME }}/backend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-fatur:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/backend-fatur:${{ github.sha }}
