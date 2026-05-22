@@ -12,7 +12,9 @@ def create_detection_job(db: Session, filename: str, original_filename: str):
     db_job = models.DetectionJob(
         filename=filename, 
         original_filename=original_filename,
-        status="PENDING"
+        status="PENDING",
+        healthy_detection_count=0,
+        unhealthy_detection_count=0
     )
     db.add(db_job)
     db.commit()
@@ -31,16 +33,28 @@ def set_job_status(db: Session, job_id: int, status: str):
     db_job = get_job(db, job_id)
     if db_job:
         db_job.status = status
+        if status in {"PENDING", "PROCESSING"}:
+            db_job.healthy_detection_count = 0
+            db_job.unhealthy_detection_count = 0
         db.commit()
         db.refresh(db_job)
     return db_job
 
-def complete_job(db: Session, job_id: int, status: str, output_path: str = None):
+def complete_job(
+    db: Session,
+    job_id: int,
+    status: str,
+    output_path: str = None,
+    healthy_detection_count: int = 0,
+    unhealthy_detection_count: int = 0
+):
     db_job = get_job(db, job_id)
     if db_job:
         db_job.status = status
         db_job.output_path = output_path
         db_job.completion_time = datetime.utcnow()
+        db_job.healthy_detection_count = healthy_detection_count
+        db_job.unhealthy_detection_count = unhealthy_detection_count
         db.commit()
         db.refresh(db_job)
     return db_job

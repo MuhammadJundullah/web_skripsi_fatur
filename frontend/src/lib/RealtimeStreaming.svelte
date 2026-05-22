@@ -17,12 +17,29 @@
   export let intervalOptions;
 
   let canvasElement; // Managed internally by RealtimeStreaming
+  let detectionSummary = null;
+  let sessionHealthyCount = 0;
+  let sessionUnhealthyCount = 0;
+
+  function getAlertClass(summary) {
+    if (!summary) return 'alert-secondary';
+    if (summary.needs_immediate_harvest) return 'alert-danger';
+    if (summary.overall_status === 'healthy') return 'alert-success';
+    return 'alert-secondary';
+  }
+
+  function resetSessionCounts() {
+    sessionHealthyCount = 0;
+    sessionUnhealthyCount = 0;
+  }
 
   // Re-export functions that need to be called from parent
   export function startStreaming() {
     // Logic from App.svelte's startStreaming
     if (isStreaming) return;
     streamingStatus = "Starting camera...";
+    detectionSummary = null;
+    resetSessionCounts();
     try {
       const constraints = {
         video: {
@@ -52,6 +69,18 @@
               const imageUrl = URL.createObjectURL(event.data);
               processedImageElement.src = imageUrl;
               lastImageUrl = imageUrl;
+              return;
+            }
+
+            try {
+              const message = JSON.parse(event.data);
+              if (message.type === 'detection_summary') {
+                detectionSummary = message.data;
+                sessionHealthyCount += message.data.healthy_count || 0;
+                sessionUnhealthyCount += message.data.diseased_count || 0;
+              }
+            } catch (error) {
+              console.error("Failed to parse streaming message:", error);
             }
           };
           streamingSocket.onclose = () => {
@@ -92,6 +121,7 @@
       lastImageUrl = null;
     }
     if (processedImageElement) processedImageElement.src = '';
+    detectionSummary = null;
     if (streamingStatus.startsWith("Connection open")) {
       streamingStatus = "Streaming stopped.";
     }
@@ -175,6 +205,31 @@
   </div>
 
   <p class="text-muted small mt-2 mb-3">Status: {streamingStatus}</p>
+
+  {#if detectionSummary}
+    <div class={`alert ${getAlertClass(detectionSummary)} mb-3`} role="alert">
+      {detectionSummary.recommendation}
+    </div>
+  {/if}
+
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-md-6">
+      <div class="card border-0 bg-light h-100">
+        <div class="card-body">
+          <div class="small text-muted mb-1">{detectionSummary?.healthy_class_name ?? 'Udang Vanamei Sehat'}</div>
+          <div class="h4 mb-0 text-success">{sessionHealthyCount}</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-6">
+      <div class="card border-0 bg-light h-100">
+        <div class="card-body">
+          <div class="small text-muted mb-1">Total Deteksi Tidak Sehat</div>
+          <div class={`h4 mb-0 ${sessionUnhealthyCount > 0 ? 'text-danger' : 'text-success'}`}>{sessionUnhealthyCount}</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <div class="row g-3">
     <div class="col-12 col-lg-6">

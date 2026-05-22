@@ -15,6 +15,8 @@ class Job(JobBase):
     upload_time: datetime
     output_path: Optional[str] = None
     completion_time: Optional[datetime] = None
+    healthy_detection_count: int = 0
+    unhealthy_detection_count: int = 0
 
     class Config:
         from_attributes = True # orm_mode = True
@@ -48,6 +50,10 @@ class DetectionSummary(BaseModel):
     diseased_count: int
     healthy_percentage: float
     diseased_percentage: float
+    healthy_class_name: str
+    overall_status: str
+    recommendation: str
+    needs_immediate_harvest: bool
 
 class ImageDetectionResponse(BaseModel):
     imageUrl: str

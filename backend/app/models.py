@@ -12,6 +12,8 @@ class DetectionJob(Base):
     upload_time = Column(DateTime, server_default=func.now())
     output_path = Column(String, nullable=True)
     completion_time = Column(DateTime, nullable=True)
+    healthy_detection_count = Column(Integer, default=0)
+    unhealthy_detection_count = Column(Integer, default=0)
 
 class Setting(Base):
     __tablename__ = "settings"

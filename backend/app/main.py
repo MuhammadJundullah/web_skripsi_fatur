@@ -70,18 +70,42 @@ def get_model_confidence(db: Session) -> float:
     return 0.25 
 
 
-HEALTHY_CLASS_KEYWORDS = {
-    "normal",
-    "healthy",
-    "sehat",
-    "aman",
-    "good",
-}
+HEALTHY_CLASS_NAME = "Udang Vanamei Sehat"
+NORMALIZED_HEALTHY_CLASS_NAME = HEALTHY_CLASS_NAME.strip().lower()
 
 
 def is_healthy_class(class_name: str) -> bool:
-    normalized = class_name.strip().lower()
-    return any(keyword in normalized for keyword in HEALTHY_CLASS_KEYWORDS)
+    return class_name.strip().lower() == NORMALIZED_HEALTHY_CLASS_NAME
+
+
+def build_detection_summary(total_detected: int, healthy_count: int, diseased_count: int) -> schemas.DetectionSummary:
+    healthy_percentage = (healthy_count / total_detected * 100) if total_detected > 0 else 0.0
+    diseased_percentage = (diseased_count / total_detected * 100) if total_detected > 0 else 0.0
+
+    if diseased_count > 0:
+        overall_status = "warning"
+        recommendation = "Terdeteksi udang selain sehat. Udang harus segera dipanen."
+        needs_immediate_harvest = True
+    elif healthy_count > 0:
+        overall_status = "healthy"
+        recommendation = "Seluruh udang yang terdeteksi berada dalam kondisi sehat."
+        needs_immediate_harvest = False
+    else:
+        overall_status = "no_detection"
+        recommendation = "Belum ada udang yang terdeteksi."
+        needs_immediate_harvest = False
+
+    return schemas.DetectionSummary(
+        total_count=total_detected,
+        healthy_count=healthy_count,
+        diseased_count=diseased_count,
+        healthy_percentage=healthy_percentage,
+        diseased_percentage=diseased_percentage,
+        healthy_class_name=HEALTHY_CLASS_NAME,
+        overall_status=overall_status,
+        recommendation=recommendation,
+        needs_immediate_harvest=needs_immediate_harvest
+    )
 
 # --- API Endpoints ---
 
@@ -155,27 +179,10 @@ async def detect_image_endpoint(file: UploadFile = File(...), db: Session = Depe
                     bbox=schemas.BoundingBox(x1=x1, y1=y1, x2=x2, y2=y2)
                 ))
 
-            # Calculate summary statistics
             total_detected = len(detections_data)
-            healthy_percentage = (healthy_count / total_detected * 100) if total_detected > 0 else 0
-            diseased_percentage = (diseased_count / total_detected * 100) if total_detected > 0 else 0
-
-            summary = schemas.DetectionSummary(
-                total_count=total_detected,
-                healthy_count=healthy_count,
-                diseased_count=diseased_count,
-                healthy_percentage=healthy_percentage,
-                diseased_percentage=diseased_percentage
-            )
+            summary = build_detection_summary(total_detected, healthy_count, diseased_count)
         else:
-            # No detections found
-            summary = schemas.DetectionSummary(
-                total_count=0,
-                healthy_count=0,
-                diseased_count=0,
-                healthy_percentage=0.0,
-                diseased_percentage=0.0
-            )
+            summary = build_detection_summary(0, 0, 0)
             detections_data = []
 
         # Draw bounding boxes on the image
@@ -317,6 +324,18 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(depende
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 if frame is None: continue
                 results = model(frame, verbose=False, conf=confidence, iou=0.45)
+                healthy_count = 0
+                diseased_count = 0
+                if results and results[0].boxes:
+                    for box in results[0].boxes:
+                        class_id = int(box.cls[0])
+                        class_name = model.names[class_id]
+                        if is_healthy_class(class_name):
+                            healthy_count += 1
+                        else:
+                            diseased_count += 1
+                summary = build_detection_summary(healthy_count + diseased_count, healthy_count, diseased_count)
+                await websocket.send_json({"type": "detection_summary", "data": summary.model_dump()})
                 annotated_frame = results[0].plot(conf=True, boxes=True)
                 ret, buffer = cv2.imencode('.jpg', annotated_frame)
                 if ret: await websocket.send_bytes(buffer.tobytes())

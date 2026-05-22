@@ -5,6 +5,14 @@ from ultralytics import YOLO
 import os
 import cv2
 
+HEALTHY_CLASS_NAME = "Udang Vanamei Sehat"
+NORMALIZED_HEALTHY_CLASS_NAME = HEALTHY_CLASS_NAME.strip().lower()
+
+
+def is_healthy_class(class_name: str) -> bool:
+    return class_name.strip().lower() == NORMALIZED_HEALTHY_CLASS_NAME
+
+
 # Define base directory for uploads and outputs
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOADS_DIR = os.path.join(BASE_DIR, "..", "uploads")
@@ -48,6 +56,8 @@ def process_video_task(job_id: int, confidence: float = 0.1):
         
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+        healthy_detection_count = 0
+        unhealthy_detection_count = 0
 
         while cap.isOpened():
             ret, frame = cap.read()
@@ -55,13 +65,28 @@ def process_video_task(job_id: int, confidence: float = 0.1):
                 break
             
             results = model(frame, verbose=False, conf=confidence)
+            if results and results[0].boxes:
+                for box in results[0].boxes:
+                    class_id = int(box.cls[0])
+                    class_name = model.names[class_id]
+                    if is_healthy_class(class_name):
+                        healthy_detection_count += 1
+                    else:
+                        unhealthy_detection_count += 1
             annotated_frame = results[0].plot()
             out.write(annotated_frame)
 
         cap.release()
         out.release()
 
-        crud.complete_job(db, job_id, "SUCCESS", output_path)
+        crud.complete_job(
+            db,
+            job_id,
+            "SUCCESS",
+            output_path,
+            healthy_detection_count=healthy_detection_count,
+            unhealthy_detection_count=unhealthy_detection_count
+        )
         print(f"--- Video Processing Task SUCCESS for job {job_id} ---")
 
         # Clean up the original uploaded file
@@ -73,6 +98,6 @@ def process_video_task(job_id: int, confidence: float = 0.1):
 
     except Exception as e:
         print(f"Error during video processing task for job {job_id}: {e}")
-        crud.complete_job(db, job_id, "FAILURE")
+        crud.complete_job(db, job_id, "FAILURE", healthy_detection_count=0, unhealthy_detection_count=0)
     finally:
         db.close()

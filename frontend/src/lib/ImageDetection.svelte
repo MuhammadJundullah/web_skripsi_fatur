@@ -18,6 +18,13 @@
     return value.toFixed(2);
   }
 
+  function getAlertClass(summary) {
+    if (!summary) return 'alert-secondary';
+    if (summary.needs_immediate_harvest) return 'alert-danger';
+    if (summary.overall_status === 'healthy') return 'alert-success';
+    return 'alert-secondary';
+  }
+
 
   let canvasElement;
 
@@ -179,13 +186,16 @@
   {#if detectionResponse && detectionResponse.summary}
     <div class="mt-4 p-3 bg-light rounded border">
       <h3 class="h5 mb-3">Ringkasan Hasil:</h3>
+      <div class={`alert ${getAlertClass(detectionResponse.summary)} mb-3`} role="alert">
+        {detectionResponse.summary.recommendation}
+      </div>
       <div class="row">
         <div class="col-md-6">
           <p class="mb-1"><strong>Total Udang Terdeteksi:</strong> {detectionResponse.summary.total_count}</p>
-          <p class="mb-1"><strong>Udang Sehat:</strong> {detectionResponse.summary.healthy_count} ({formatPercentage(detectionResponse.summary.healthy_percentage)}%)</p>
+          <p class="mb-1"><strong>{detectionResponse.summary.healthy_class_name}:</strong> {detectionResponse.summary.healthy_count} ({formatPercentage(detectionResponse.summary.healthy_percentage)}%)</p>
         </div>
         <div class="col-md-6">
-          <p class="mb-1"><strong>Terindikasi Penyakit:</strong> {detectionResponse.summary.diseased_count} ({formatPercentage(detectionResponse.summary.diseased_percentage)}%)</p>
+          <p class="mb-1"><strong>Udang Tidak Sehat:</strong> {detectionResponse.summary.diseased_count} ({formatPercentage(detectionResponse.summary.diseased_percentage)}%)</p>
         </div>
       </div>
     </div>

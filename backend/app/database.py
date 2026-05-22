@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -19,3 +19,16 @@ def create_db_and_tables():
     from . import models
     print("--- Creating database and tables ---")
     Base.metadata.create_all(bind=engine)
+
+    inspector = inspect(engine)
+    if "detection_jobs" in inspector.get_table_names():
+        existing_columns = {column["name"] for column in inspector.get_columns("detection_jobs")}
+        with engine.begin() as connection:
+            if "healthy_detection_count" not in existing_columns:
+                connection.execute(text(
+                    "ALTER TABLE detection_jobs ADD COLUMN healthy_detection_count INTEGER DEFAULT 0"
+                ))
+            if "unhealthy_detection_count" not in existing_columns:
+                connection.execute(text(
+                    "ALTER TABLE detection_jobs ADD COLUMN unhealthy_detection_count INTEGER DEFAULT 0"
+                ))

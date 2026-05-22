@@ -56,6 +56,14 @@
     return new Date(isoString).toLocaleDateString('en-US', options);
   }
 
+  function getHarvestBadgeClass(job) {
+    return job.unhealthy_detection_count > 0 ? 'text-bg-danger' : 'text-bg-success';
+  }
+
+  function getHarvestLabel(job) {
+    return job.unhealthy_detection_count > 0 ? 'Segera Panen' : 'Aman';
+  }
+
   onMount(() => {
     fetchHistory();
     const interval = setInterval(fetchHistory, 5000);
@@ -80,6 +88,8 @@
             <th>ID</th>
             <th>Nama File</th>
             <th>Status</th>
+            <th>Deteksi Tidak Sehat</th>
+            <th>Rekomendasi</th>
             <th>Waktu Upload</th>
             <th>Aksi</th>
           </tr>
@@ -91,6 +101,10 @@
               <td>{job.original_filename}</td>
               <td>
                 <span class={`badge status-badge status-${job.status.toLowerCase()}`}>{job.status}</span>
+              </td>
+              <td>{job.unhealthy_detection_count}</td>
+              <td>
+                <span class={`badge ${getHarvestBadgeClass(job)}`}>{getHarvestLabel(job)}</span>
               </td>
               <td>{formatDateTime(job.upload_time)}</td>
               <td class="actions">
