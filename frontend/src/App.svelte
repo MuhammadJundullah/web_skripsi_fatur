@@ -21,30 +21,49 @@
   let liveDetectionPage;
   let imageDetectionPage;
 
+  function closeMonitorSocket() {
+    if (monitorSocket) {
+      monitorSocket.close();
+      monitorSocket = null;
+    }
+  }
+
+  function connectMonitorSocket(url) {
+    try {
+      const parsedUrl = new URL(url);
+      const wsProtocol = parsedUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsMonitorUrl = `${wsProtocol}//${parsedUrl.host}/ws/stream/realtime`;
+
+      closeMonitorSocket();
+      monitorSocket = new WebSocket(wsMonitorUrl);
+
+      monitorSocket.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          if (message.type === 'monitor_stats') {
+            serverStats.set(message.data);
+          }
+        } catch (e) {}
+      };
+      monitorSocket.onclose = () => {
+        serverStats.set(null);
+        if (monitorSocket?.readyState === WebSocket.CLOSED) {
+          monitorSocket = null;
+        }
+      };
+      monitorSocket.onerror = () => serverStats.set(null);
+    } catch (e) {
+      console.error("Failed to establish WebSocket connection:", e);
+      serverStats.set(null);
+    }
+  }
+
   onMount(async () => {
     await initializeApiUrl();
 
     const unsubscribe = apiBaseUrl.subscribe(url => {
-      if (url && !monitorSocket) {
-        try {
-          const wsProtocol = url.startsWith('https') ? 'wss:' : 'ws:';
-          const wsMonitorUrl = `${wsProtocol}//${url.split('//')[1]}/ws/stream/realtime`;
-          
-          monitorSocket = new WebSocket(wsMonitorUrl);
-
-          monitorSocket.onmessage = (event) => {
-            try {
-              const message = JSON.parse(event.data);
-              if (message.type === 'monitor_stats') {
-                serverStats.set(message.data);
-              }
-            } catch (e) {}
-          };
-          monitorSocket.onclose = () => serverStats.set(null);
-          monitorSocket.onerror = () => serverStats.set(null);
-        } catch (e) {
-          console.error("Failed to establish WebSocket connection:", e);
-        }
+      if (url) {
+        connectMonitorSocket(url);
       }
     });
 
@@ -55,9 +74,7 @@
       if (imageDetectionPage && imageDetectionPage.imageDetectionComponent) {
         imageDetectionPage.imageDetectionComponent.stopCameraForPhoto();
       }
-      if (monitorSocket && monitorSocket.readyState === WebSocket.OPEN) {
-        monitorSocket.close();
-      }
+      closeMonitorSocket();
       unsubscribe();
     };
   });

@@ -1,31 +1,45 @@
-// update
 import { writable } from 'svelte/store';
 
-// Default API base URL, will be overwritten by initialization
-export const apiBaseUrl = writable('https://sayidj-web-skripsi-fathur.hf.space');
+const DEFAULT_API_BASE_URL = 'https://sayidj-web-skripsi-fathur.hf.space';
+// const DEFAULT_API_BASE_URL = 'http://127.0.0.1:8000';
+
+const API_BASE_URL_STORAGE_KEY = 'apiBaseUrl';
+
+function normalizeUrl(value) {
+  return value?.trim().replace(/\/+$/, '') || DEFAULT_API_BASE_URL;
+}
+
+function getInitialApiBaseUrl() {
+  if (typeof localStorage === 'undefined') {
+    return DEFAULT_API_BASE_URL;
+  }
+
+  return normalizeUrl(localStorage.getItem(API_BASE_URL_STORAGE_KEY));
+}
+
+export const apiBaseUrl = writable(getInitialApiBaseUrl());
 
 // Store for server stats
 export const serverStats = writable(null);
 
-// Function to initialize the apiBaseUrl from the backend
 export async function initializeApiUrl() {
-  const defaultUrl = 'https://sayidj-web-skripsi-fathur.hf.space';
+  const initialUrl = getInitialApiBaseUrl();
+  apiBaseUrl.set(initialUrl);
+
   try {
-    const response = await fetch(`${defaultUrl}/settings/api_base_url`);
-    if (response.ok) {
-      const data = await response.json();
-      apiBaseUrl.set(data.value);
-      console.log("Loaded API Base URL from DB:", data.value);
-    } else {
-      // If not found, set the default one in the DB for next time
-      await fetch(`${defaultUrl}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'api_base_url', value: defaultUrl })
-      });
-      console.log("Initialized default API Base URL in DB.");
-    }
+    localStorage.setItem(API_BASE_URL_STORAGE_KEY, initialUrl);
   } catch (error) {
-    console.error("Could not fetch API base URL from settings, using default:", error);
+    console.error('Could not persist API base URL locally:', error);
+  }
+}
+
+export function setApiBaseUrl(value) {
+  const normalizedUrl = normalizeUrl(value);
+  apiBaseUrl.set(normalizedUrl);
+
+  try {
+    localStorage.setItem(API_BASE_URL_STORAGE_KEY, normalizedUrl);
+  } catch (error) {
+    console.error('Could not persist API base URL locally:', error);
   }
 }

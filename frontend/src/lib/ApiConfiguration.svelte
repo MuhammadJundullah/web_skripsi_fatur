@@ -1,32 +1,23 @@
 <script>
-  import { apiBaseUrl } from './stores.js';
+  import { apiBaseUrl, setApiBaseUrl } from './stores.js';
   import { onMount } from 'svelte';
 
   let currentApiUrl = $apiBaseUrl;
   let status = '';
+  let unsubscribe = () => {};
 
   onMount(() => {
-    // Sync local state when store changes from initial load
-    apiBaseUrl.subscribe(value => {
+    unsubscribe = apiBaseUrl.subscribe(value => {
       currentApiUrl = value;
     });
+
+    return () => unsubscribe();
   });
 
   async function saveSettings() {
     status = 'Menyimpan...';
     try {
-      const response = await fetch(`${$apiBaseUrl}/settings`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ key: 'api_base_url', value: currentApiUrl })
-      });
-
-      if (!response.ok) {
-        throw new Error('Gagal menyimpan pengaturan');
-      }
-
-      // Update the global store, which will trigger reactivity
-      apiBaseUrl.set(currentApiUrl);
+      setApiBaseUrl(currentApiUrl);
       status = 'Berhasil disimpan.';
     } catch (error) {
       status = `Error: ${error.message}`;
@@ -52,5 +43,6 @@
     {#if status}
       <div class="form-text">{status}</div>
     {/if}
+    <div class="form-text">Default backend: `https://sayidj-web-skripsi-fathur.hf.space`.</div>
   </div>
 </div>
