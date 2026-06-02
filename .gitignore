@@ -1,2 +1,5 @@
 # File sistem operasi
 .DS_Store
+backend/uploads/
+*.MOV
+*.mp4
