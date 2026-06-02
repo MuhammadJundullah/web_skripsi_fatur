@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: shrimp-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    container_name: shrimp-backend
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 7860
+    env_file:
+      - ./backend/.env
+    environment:
+      PORT: 7860
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+    depends_on:
+      - redis
+    ports:
+      - "7860:7860"
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: dockerfile
+    container_name: shrimp-celery
+    restart: unless-stopped
+    command: celery -A celery_worker.celery_app worker --loglevel=info --pool=solo
+    env_file:
+      - ./backend/.env
+    environment:
+      REDIS_URL: ${REDIS_URL:-redis://default:rBcCMutrfQsUCxAJmJxbqCAMgspwWfUI@shortline.proxy.rlwy.net:36021/0}
+    depends_on:
+      - redis
