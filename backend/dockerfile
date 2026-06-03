@@ -15,9 +15,12 @@ ENV PATH="/app/venv/bin:$PATH"
 
 COPY requirements.txt .
 
-# STRATEGI INTEL: Install torch CPU secara eksplisit sebelum requirements lainnya
-RUN pip install --no-cache-dir torch torchvision --index-url https://download.pytorch.org/whl/cpu
-RUN pip install --no-cache-dir -r requirements.txt
+# PERBAIKAN UTAMA:
+# Menggunakan --extra-index-url memastikan bahwa saat mendeteksi dependensi dari requirements.txt (seperti ultralytics), 
+# pip akan memprioritaskan mencari versi CPU dari server PyTorch, bukan versi GPU dari PyPI standar.
+RUN pip install --no-cache-dir \
+    --extra-index-url https://download.pytorch.org/whl/cpu \
+    -r requirements.txt
 
 # ---- Tahap 2: Produksi ----
 FROM python:3.11-slim AS production
@@ -28,8 +31,6 @@ WORKDIR /app
 COPY --from=builder /app/venv /app/venv
 
 # Runtime dependencies untuk OpenCV/Ultralytics pada image slim.
-# Walaupun memakai opencv-python-headless, beberapa dependency native
-# tetap sering dibutuhkan saat import/inference/plotting di Linux.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1 \
     libglib2.0-0 \
@@ -48,7 +49,7 @@ RUN useradd --create-home appuser
 USER appuser
 WORKDIR /home/appuser/app
 
-# Salin kode aplikasi
+# Salin kode aplikasi dengan hak akses user non-root
 COPY --chown=appuser:appuser . .
 
 EXPOSE 7860
