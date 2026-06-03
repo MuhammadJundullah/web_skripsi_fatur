@@ -56,6 +56,20 @@
     return new Date(isoString).toLocaleDateString('en-US', options);
   }
 
+  function formatProgress(job) {
+    const value = Number(job.progress_percent ?? 0);
+    if (job.status === 'SUCCESS') return 100;
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(0, Math.min(100, Math.round(value)));
+  }
+
+  function formatFrameCount(job) {
+    const processed = Number(job.processed_frames ?? 0);
+    const total = Number(job.total_frames ?? 0);
+    if (total <= 0) return 'Menunggu info frame';
+    return `${processed} / ${total} frame`;
+  }
+
   function getHarvestBadgeClass(job) {
     return job.unhealthy_detection_count > 0 ? 'text-bg-danger' : 'text-bg-success';
   }
@@ -88,6 +102,7 @@
             <th>ID</th>
             <th>Nama File</th>
             <th>Status</th>
+            <th>Progress</th>
             <th>Deteksi Tidak Sehat</th>
             <th>Rekomendasi</th>
             <th>Waktu Upload</th>
@@ -98,9 +113,31 @@
           {#each jobs as job (job.id)}
             <tr>
               <td>{job.id}</td>
-              <td>{job.original_filename}</td>
+              <td>{job.original_filename || job.filename}</td>
               <td>
                 <span class={`badge status-badge status-${job.status.toLowerCase()}`}>{job.status}</span>
+                {#if job.status === 'FAILURE' && job.error_message}
+                  <div class="failure-message">{job.error_message}</div>
+                {/if}
+              </td>
+              <td class="progress-cell">
+                <div class="progress-wrapper">
+                  <div class="progress">
+                    <div
+                      class="progress-bar"
+                      class:progress-bar-striped={job.status === 'PROCESSING'}
+                      class:progress-bar-animated={job.status === 'PROCESSING'}
+                      role="progressbar"
+                      style={`width: ${formatProgress(job)}%;`}
+                      aria-valuenow={formatProgress(job)}
+                      aria-valuemin="0"
+                      aria-valuemax="100"
+                    >
+                      {formatProgress(job)}%
+                    </div>
+                  </div>
+                  <small class="text-muted">{formatProgress(job)}% - {formatFrameCount(job)}</small>
+                </div>
               </td>
               <td>{job.unhealthy_detection_count}</td>
               <td>
@@ -135,6 +172,11 @@
   .status-processing { background-color: #17a2b8; }
   .status-success { background-color: #28a745; }
   .status-failure { background-color: #dc3545; }
+  .progress-cell { min-width: 220px; }
+  .progress-wrapper { display: grid; gap: 0.25rem; }
+  .progress { height: 1.25rem; background-color: #e9ecef; }
+  .progress-bar { background-color: #0d6efd; color: white; font-size: 0.75rem; line-height: 1.25rem; }
+  .failure-message { max-width: 320px; margin-top: 0.25rem; color: #dc3545; font-size: 0.8rem; white-space: normal; }
   .actions { display: flex; gap: 0.5rem; }
   .error { color: #dc3545; }
 </style>

@@ -17,7 +17,7 @@ services:
       - ./backend/.env
     environment:
       PORT: 7860
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379/2}
     depends_on:
       - redis
     ports:
@@ -33,6 +33,6 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      REDIS_URL: ${REDIS_URL:-redis://default:rBcCMutrfQsUCxAJmJxbqCAMgspwWfUI@shortline.proxy.rlwy.net:36021/0}
+      REDIS_URL: ${REDIS_URL:-redis://default:rBcCMutrfQsUCxAJmJxbqCAMgspwWfUI@shortline.proxy.rlwy.net:36021/2}
     depends_on:
       - redis
