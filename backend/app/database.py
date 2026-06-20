@@ -32,3 +32,15 @@ def create_db_and_tables():
                 connection.execute(text(
                     "ALTER TABLE detection_jobs ADD COLUMN unhealthy_detection_count INTEGER DEFAULT 0"
                 ))
+            if "total_frames" not in existing_columns:
+                connection.execute(text(
+                    "ALTER TABLE detection_jobs ADD COLUMN total_frames INTEGER DEFAULT 0"
+                ))
+            if "processed_frames" not in existing_columns:
+                connection.execute(text(
+                    "ALTER TABLE detection_jobs ADD COLUMN processed_frames INTEGER DEFAULT 0"
+                ))
+            if "progress_percent" not in existing_columns:
+                connection.execute(text(
+                    "ALTER TABLE detection_jobs ADD COLUMN progress_percent INTEGER DEFAULT 0"
+                ))

@@ -76,8 +76,8 @@
               const message = JSON.parse(event.data);
               if (message.type === 'detection_summary') {
                 detectionSummary = message.data;
-                sessionHealthyCount += message.data.healthy_count || 0;
-                sessionUnhealthyCount += message.data.diseased_count || 0;
+                sessionHealthyCount = message.data.healthy_count || 0;
+                sessionUnhealthyCount = message.data.diseased_count || 0;
               }
             } catch (error) {
               console.error("Failed to parse streaming message:", error);
@@ -234,10 +234,18 @@
   <div class="row g-3">
     <div class="col-12 col-lg-6">
       <div class="card h-100">
-          <div class="card-header">Kamera Langsung</div>
+        <div class="card-header">Kamera Langsung</div>
         <div class="card-body">
-          <div class="ratio ratio-4x3">
-            <video class="w-100 h-100" bind:this={videoElement} autoplay muted playsinline></video>
+          <div class="ratio ratio-4x3 bg-dark rounded overflow-hidden position-relative">
+            <video class="w-100 h-100 object-fit-contain" bind:this={videoElement} autoplay muted playsinline></video>
+            {#if !isStreaming}
+              <div class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-white bg-dark">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" class="bi bi-camera-video-off mb-2" viewBox="0 0 16 16">
+                  <path fill-rule="evenodd" d="M10.961 12.365a1.99 1.99 0 0 0 .522-1.103l3.11 1.382A1 1 0 0 0 16 11.731V4.269a1 1 0 0 0-1.406-.913l-3.111 1.382A2 2 0 0 0 9.5 3H4.272l.714 1H9.5a1 1 0 0 1 1 1v6a1 1 0 0 1-.144.525M1.66 10.428 11.166 1H9.5a1 1 0 0 1 1 1v6a1 1 0 0 1-.144.525M1.66 10.428 1.146 9.914a1 1 0 0 1 0-1.414l7.146-7.146a1 1 0 0 1 1.414 0l.514.514zm1.182.883a1.5 1.5 0 0 0 1.5 1.5h4.728l.8 1H4.342a2.5 2.5 0 0 1-2.5-2.5V4.842l1 1v5.47z"/>
+                </svg>
+                <span class="small">Kamera Nonaktif</span>
+              </div>
+            {/if}
           </div>
         </div>
       </div>
@@ -245,9 +253,19 @@
 
     <div class="col-12 col-lg-6">
       <div class="card h-100">
-          <div class="card-header">Hasil Deteksi</div>
+        <div class="card-header">Hasil Deteksi</div>
         <div class="card-body">
-          <img class="img-fluid border" bind:this={processedImageElement} alt="Hasil streaming deteksi penyakit udang" />
+          <div class="ratio ratio-4x3 bg-dark rounded overflow-hidden position-relative">
+            <img class="w-100 h-100 object-fit-contain" bind:this={processedImageElement} alt="Hasil streaming deteksi penyakit udang" />
+            {#if !isStreaming || !lastImageUrl}
+              <div class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column align-items-center justify-content-center text-white-50 bg-dark">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" fill="currentColor" class="bi bi-cpu mb-2" viewBox="0 0 16 16">
+                  <path d="M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 1 .5.5v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1.5a.5.5 0 0 1-.5.5h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-.5-.5h-.5a.5.5 0 0 1-.5-.5v-1H2v-1.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2V5H.5a.5.5 0 0 1 0-1H2V3a.5.5 0 0 1 .5-.5h1.5v-1A.5.5 0 0 1 5 0zm-.5 3v10h10V3H4.5zM5 4h9v8H5V4z"/>
+                </svg>
+                <span class="small">Menunggu Aliran Deteksi</span>
+              </div>
+            {/if}
+          </div>
         </div>
       </div>
     </div>

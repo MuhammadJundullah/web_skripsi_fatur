@@ -14,6 +14,9 @@ class DetectionJob(Base):
     completion_time = Column(DateTime, nullable=True)
     healthy_detection_count = Column(Integer, default=0)
     unhealthy_detection_count = Column(Integer, default=0)
+    total_frames = Column(Integer, default=0)
+    processed_frames = Column(Integer, default=0)
+    progress_percent = Column(Integer, default=0)
 
 class Setting(Base):
     __tablename__ = "settings"

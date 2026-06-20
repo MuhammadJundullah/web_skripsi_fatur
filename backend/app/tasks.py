@@ -4,6 +4,9 @@ from .database import SessionLocal
 from ultralytics import YOLO
 import os
 import cv2
+import torch
+
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 HEALTHY_CLASS_NAME = "Udang Vanamei Sehat"
 NORMALIZED_HEALTHY_CLASS_NAME = HEALTHY_CLASS_NAME.strip().lower()
@@ -58,23 +61,65 @@ def process_video_task(job_id: int, confidence: float = 0.1):
         out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
         healthy_detection_count = 0
         unhealthy_detection_count = 0
+        seen_healthy_ids = set()
+        seen_diseased_ids = set()
+
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total_frames <= 0:
+            total_frames = 1
+        crud.update_job_progress(db, job_id, processed_frames=0, total_frames=total_frames, progress_percent=0)
+
+        processed_count = 0
 
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
             
-            results = model(frame, verbose=False, conf=confidence)
+            results = model.track(frame, persist=True, verbose=False, conf=confidence, device=device)
+            current_healthy = 0
+            current_diseased = 0
             if results and results[0].boxes:
-                for box in results[0].boxes:
+                boxes = results[0].boxes
+                track_ids = boxes.id.int().cpu().tolist() if boxes.id is not None else None
+                for i, box in enumerate(boxes):
                     class_id = int(box.cls[0])
                     class_name = model.names[class_id]
-                    if is_healthy_class(class_name):
-                        healthy_detection_count += 1
+                    is_healthy = is_healthy_class(class_name)
+                    if is_healthy:
+                        current_healthy += 1
                     else:
-                        unhealthy_detection_count += 1
+                        current_diseased += 1
+                    if track_ids is not None:
+                        track_id = track_ids[i]
+                        if is_healthy:
+                            seen_healthy_ids.add(track_id)
+                        else:
+                            seen_diseased_ids.add(track_id)
+            
+            # If tracking was not active (e.g. no tracking IDs returned), accumulate frame counts
+            if not (seen_healthy_ids or seen_diseased_ids):
+                healthy_detection_count += current_healthy
+                unhealthy_detection_count += current_diseased
+                
             annotated_frame = results[0].plot()
             out.write(annotated_frame)
+            
+            processed_count += 1
+            if processed_count % 10 == 0 or processed_count == total_frames:
+                progress_percent = int((processed_count / total_frames) * 100)
+                progress_percent = min(99, progress_percent)  # Keep 100 for SUCCESS status
+                crud.update_job_progress(
+                    db,
+                    job_id,
+                    processed_frames=processed_count,
+                    total_frames=total_frames,
+                    progress_percent=progress_percent
+                )
+
+        if seen_healthy_ids or seen_diseased_ids:
+            healthy_detection_count = len(seen_healthy_ids)
+            unhealthy_detection_count = len(seen_diseased_ids)
 
         cap.release()
         out.release()
@@ -85,7 +130,9 @@ def process_video_task(job_id: int, confidence: float = 0.1):
             "SUCCESS",
             output_path,
             healthy_detection_count=healthy_detection_count,
-            unhealthy_detection_count=unhealthy_detection_count
+            unhealthy_detection_count=unhealthy_detection_count,
+            total_frames=total_frames,
+            processed_frames=processed_count
         )
         print(f"--- Video Processing Task SUCCESS for job {job_id} ---")
 

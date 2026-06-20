@@ -17,6 +17,9 @@ import cv2
 import numpy as np
 from PIL import Image
 import psutil
+import torch
+
+device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
 from . import crud, models, schemas, tasks, dependencies, database
 
@@ -149,7 +152,7 @@ async def detect_image_endpoint(file: UploadFile = File(...), db: Session = Depe
         image_pil = Image.open(io.BytesIO(contents)).convert("RGB")
         
         # Perform inference
-        results = model(image_pil, conf=confidence, iou=0.45, verbose=False) # verbose=False to reduce console output
+        results = model(image_pil, conf=confidence, iou=0.45, verbose=False, device=device) # verbose=False to reduce console output
         
         # Process results
         detections_data = []
@@ -286,11 +289,27 @@ def get_system_resources_data():
     virtual_memory = psutil.virtual_memory()
     disk_usage = psutil.disk_usage('/')
     net_io_counters = psutil.net_io_counters()
+    
+    # Get GPU information using torch
+    gpu_available = torch.cuda.is_available()
+    gpu_info = {
+        "available": gpu_available
+    }
+    if gpu_available:
+        try:
+            gpu_info["name"] = torch.cuda.get_device_name(0)
+            gpu_info["allocated_mb"] = round(torch.cuda.memory_allocated(0) / (1024 * 1024), 2)
+            gpu_info["reserved_mb"] = round(torch.cuda.memory_reserved(0) / (1024 * 1024), 2)
+            gpu_info["max_allocated_mb"] = round(torch.cuda.max_memory_allocated(0) / (1024 * 1024), 2)
+        except Exception as e:
+            gpu_info["error"] = str(e)
+            
     return {
         "cpu_percent": cpu_percent,
         "memory": {"total": virtual_memory.total, "available": virtual_memory.available, "percent": virtual_memory.percent, "used": virtual_memory.used, "free": virtual_memory.free},
         "disk": {"total": disk_usage.total, "used": disk_usage.used, "free": disk_usage.free, "percent": disk_usage.percent},
         "network": {"bytes_sent": net_io_counters.bytes_sent, "bytes_recv": net_io_counters.bytes_recv},
+        "gpu": gpu_info,
         "timestamp": psutil.boot_time()
     }
 
@@ -317,25 +336,53 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(depende
                 break
 
     async def process_video_frames_task():
+        seen_healthy_ids = set()
+        seen_diseased_ids = set()
         while True:
             try:
                 data = await websocket.receive_bytes()
                 nparr = np.frombuffer(data, np.uint8)
                 frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
                 if frame is None: continue
-                results = model(frame, verbose=False, conf=confidence, iou=0.45)
-                healthy_count = 0
-                diseased_count = 0
+                
+                # Use tracking to assign unique IDs to objects across frames
+                results = model.track(frame, persist=True, verbose=False, conf=confidence, iou=0.45, device=device)
+                
+                current_healthy = 0
+                current_diseased = 0
+                
                 if results and results[0].boxes:
-                    for box in results[0].boxes:
+                    boxes = results[0].boxes
+                    track_ids = boxes.id.int().cpu().tolist() if boxes.id is not None else None
+                    
+                    for i, box in enumerate(boxes):
                         class_id = int(box.cls[0])
                         class_name = model.names[class_id]
-                        if is_healthy_class(class_name):
-                            healthy_count += 1
+                        is_healthy = is_healthy_class(class_name)
+                        
+                        if is_healthy:
+                            current_healthy += 1
                         else:
-                            diseased_count += 1
+                            current_diseased += 1
+                            
+                        if track_ids is not None:
+                            track_id = track_ids[i]
+                            if is_healthy:
+                                seen_healthy_ids.add(track_id)
+                            else:
+                                seen_diseased_ids.add(track_id)
+                
+                # If tracking IDs are active, use unique counts; otherwise fall back to current frame count
+                if len(seen_healthy_ids) > 0 or len(seen_diseased_ids) > 0:
+                    healthy_count = len(seen_healthy_ids)
+                    diseased_count = len(seen_diseased_ids)
+                else:
+                    healthy_count = current_healthy
+                    diseased_count = current_diseased
+                    
                 summary = build_detection_summary(healthy_count + diseased_count, healthy_count, diseased_count)
                 await websocket.send_json({"type": "detection_summary", "data": summary.model_dump()})
+                
                 annotated_frame = results[0].plot(conf=True, boxes=True)
                 ret, buffer = cv2.imencode('.jpg', annotated_frame)
                 if ret: await websocket.send_bytes(buffer.tobytes())

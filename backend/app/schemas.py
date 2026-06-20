@@ -17,6 +17,9 @@ class Job(JobBase):
     completion_time: Optional[datetime] = None
     healthy_detection_count: int = 0
     unhealthy_detection_count: int = 0
+    total_frames: int = 0
+    processed_frames: int = 0
+    progress_percent: int = 0
 
     class Config:
         from_attributes = True # orm_mode = True
