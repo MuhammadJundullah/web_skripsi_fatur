@@ -27,3 +27,4 @@ certifi
 charset-normalizer
 idna
 sniffio
+lapx>=0.5.5
